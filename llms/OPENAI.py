@@ -4,7 +4,7 @@ import os
 load_dotenv()
 
 
-class OPENAI:
+class OpenAi:
     client = OpenAI(
         api_key=os.environ.get("OPENAI_API_KEY")
     )
@@ -14,7 +14,7 @@ class OPENAI:
             return "Prompt is empty"
 
         prompt = f"{user_prompt}"
-        completion = OPENAI.client.chat.completions.create(
+        completion = OpenAi.client.chat.completions.create(
             model="gpt-4o-mini",
             store=True,
             messages=[{"role": "user", "content": prompt}]
