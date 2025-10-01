@@ -14,3 +14,12 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+
+CarbonFootPrint/CodeCarbon.py
+Keys/
+Output/
+venv/
+llms/__pycache__/
+slms/__pycache__/
+CarbonFootPrint/__pycache__/
