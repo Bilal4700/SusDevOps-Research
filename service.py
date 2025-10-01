@@ -3,7 +3,7 @@ import llms.Gemini as GEMINI
 import llms.Claude as CLAUDE
 import slms.Qwen as QWEN
 import slms.Gemma as GEMMA
-import slms.DeepSeek as DEEPSEEK
+import QualityCheck.Check_by_OpenAI as OpenAICheck
 
 
 def get_OPENAI_terraform_script(prompt: str) -> str:
@@ -25,6 +25,10 @@ def get_QWEN_terraform_script(prompt: str):
 def get_GEMMA_terraform_script(prompt: str) -> str:
     text, usage = GEMMA.Gemma.generate_terraform_script(prompt)
     return text, usage
+
+def compare_scripts_using_open_Ai(prompt: str) -> str:
+    text = OpenAICheck.OpenAiCheck.compare_terraform_script(prompt)
+    return text
 
 
 

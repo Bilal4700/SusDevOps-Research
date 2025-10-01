@@ -4,13 +4,8 @@ from google.cloud import storage
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-# Ensure the required environment variables are set
-if not os.environ.get("GCS_BUCKET"):
-    raise EnvironmentError("GCS_BUCKET not set in environment variables")
-if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-    raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set in environment variables")
 
-load_dotenv(override=True)
+load_dotenv()
 
 GCS_BUCKET = os.environ.get("GCS_BUCKET")
 GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
@@ -30,8 +25,25 @@ def set_gcs_connection():
     bucket = client.bucket(GCS_BUCKET)
     return bucket
 
-def write_string_to_gcs(object_name: str, data: str, content_type="application/json") -> str:
+def write_string_to_gcs(
+    object_name: str,
+    data: str,
+    folder: str = None,          # top-level folder (e.g., "OpenAi")
+    subfolder: str = None,       
+    content_type: str = "application/json"
+) -> str:
     bucket = set_gcs_connection()
-    blob = bucket.blob(object_name)
+
+    # Build object path with optional folder and subfolder
+    parts = []
+    if folder:
+        parts.append(folder.strip("/"))
+    if subfolder:
+        parts.append(subfolder.strip("/"))
+    parts.append(object_name)
+
+    object_path = "/".join(parts)
+
+    blob = bucket.blob(object_path)
     blob.upload_from_string(data, content_type=content_type)
-    return f"gs://{GCS_BUCKET}/{object_name}"
+    return f"gs://{GCS_BUCKET}/{object_path}"
