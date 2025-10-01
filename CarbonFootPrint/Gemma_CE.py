@@ -1,11 +1,11 @@
 from codecarbon import EmissionsTracker
 import service
 
-
-def print_carbon_footprint(prompt):
-        with EmissionsTracker() as tracker:
-                service.get_GEMMA_terraform_script(prompt)
-
-        print(f"\nCarbon emissions from computation: {tracker.final_emissions * 1000:.4f} g CO2eq")
-        # print("\nDetailed emissions data:", tracker.final_emissions_data)
-        
+def get_slm_with_local_emissions(prompt):
+    tracker = EmissionsTracker()
+    tracker.start()  
+    try:
+        output = service.get_GEMMA_terraform_script(prompt)  
+    finally:
+        emissions_kg = tracker.stop()  # returns 
+    return output, emissions_kg
