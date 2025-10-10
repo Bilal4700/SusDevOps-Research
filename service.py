@@ -1,6 +1,7 @@
 import llms.OpenAi as OPENAI
 import llms.Gemini as GEMINI
 import llms.Claude as CLAUDE
+import llms.StarCoder2 as SC2
 import slms.Qwen as QWEN
 import slms.Gemma as GEMMA
 import QualityCheck.Check_by_OpenAI as OpenAICheck
@@ -24,6 +25,10 @@ def get_QWEN_terraform_script(prompt: str):
 
 def get_GEMMA_terraform_script(prompt: str) -> str:
     text, usage = GEMMA.Gemma.generate_terraform_script(prompt)
+    return text, usage
+
+def get_StarCoder2_terraform_script(prompt:str) -> str:
+    text, usage = SC2.StarCoder2.generate_terraform_script(prompt)
     return text, usage
 
 def compare_scripts_using_open_Ai(prompt: str) -> str:

@@ -5,29 +5,55 @@ import service
 import sys
 
 
-
-def get_script_description_prompt(script_description) -> str:
-    prompt = f"""
-
-    Generate a terraform script that has following features/specifications: 
-
-    {script_description}.\n
+def get_script_description_prompt() -> str:
+        return """
     
-    Rules:
-    - Make a very simple structure.
-    - Output only valid Terraform code in HCL format.
-    - No XML/JSON/Markdown/comments/explanations.
-    - Do not include explanations, comments, variables, outputs, or extra text.
-    - Indent with exactly 2 spaces.
-    """
+    You are an expert Terraform infrastructure generator. 
+Write a single, minimal, production-ready Terraform configuration in pure HCL based on the following variable schema and example values.
+
+Rules:
+- Use only HCL syntax (no Markdown, no comments, no explanations).
+- Use the variable names and types provided below.
+- Make sure all resources are logically connected (e.g., subnets reference the VPC).
+- Output only valid Terraform code.
+
+Variable Schema:
+
+1. VPC
+   - cidr_block (string): "10.0.0.0/16"
+   - enable_dns_support (bool): true
+   - enable_dns_hostnames (bool): true
+
+2. Subnet
+   - vpc_id (string): Reference to VPC
+   - cidr_block (string): "10.0.1.0/24"
+   - availability_zone (string): "us-west-2a"
+
+3. Security Group
+   - vpc_id (string): Reference to VPC
+   - ingress (list(object)):
+     ingress = [{
+       from_port = 5432
+       to_port   = 5432
+       protocol  = "tcp"
+       cidr_blocks = ["10.0.0.0/16"]
+     }]
+
+Instructions:
+- Use these inputs to build a working Terraform configuration that:
+  - Creates a VPC
+  - Adds a subnet in the VPC
+  - Creates a security group attached to that VPC
+- Output must be valid `.tf` code only.
+"""
+
     
-    return prompt
 
 def get_script_comparison_prompt(script1, script2) -> str:
     prompt = f"""Copmare these two terrafrom script, and tell me if they are logically correct/identical.\n 
     Script1: {script1}\n 
     Script2: {script2}\n
-    Answer your question with yes or no and dont provide an explaination with more than three lines."""
+    Answer your question with a percentage, on how much it is identical. Identical percentage"""
 
     return prompt
 
@@ -55,25 +81,28 @@ def print_output(llm_output,template_output, emissions, elapsed, usage, comparis
     print(comparison)
     
 
-def generate_result(choice, script_description, script_template, name_script):
+def generate_result(choice, script_template, name_script):
      # Map choices to your service callables (all must be defined in service)
 
-    initial_prompt = get_script_description_prompt(script_description)
+    initial_prompt = get_script_description_prompt()
 
     call_options = {
         "1": service.get_OPENAI_terraform_script,
         "2": service.get_GEMINI_terraform_script,
-        "3": service.get_CLAUDE_terraform_script,
-        "4": service.get_QWEN_terraform_script,
-        "5": service.get_GEMMA_terraform_script,
+        "3": service.get_StarCoder2_terraform_script,
+        "4": service.get_CLAUDE_terraform_script,
+        "5": service.get_QWEN_terraform_script,
+        "6": service.get_GEMMA_terraform_script,
+        
     }
 
     project_name_options = {
         "1": "OpenAI",
         "2": "Gemini",
-        "3": "Claude",
-        "4": "Qwen",
-        "5": "Gemma",
+        "3": "Star Coder 2",
+        "4": "Claude",
+        "5": "Qwen",
+        "6": "Gemma",
     }
 
     _model_call = call_options.get(choice)
@@ -109,37 +138,56 @@ def generate_result(choice, script_description, script_template, name_script):
 
 if __name__ == "__main__":
     
-    name_script = "bilal"
-    script_description = "Terraform module which creates VPC resources on AWS."
+    name_script = "Real Test232"
+
     script_template ="""
 
-    module "vpc" {
-    source = "terraform-aws-modules/vpc/aws"
+    module "cluster" {
+  source  = "terraform-aws-modules/rds-aurora/aws"
 
-    name = "my-vpc"
-    cidr = "10.0.0.0/16"
-
-    azs             = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-    private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-    public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-
-    enable_nat_gateway = true
-    enable_vpn_gateway = true
-
-    tags = {
-        Terraform = "true"
-        Environment = "dev"
+  name           = "test-aurora-db-postgres96"
+  engine         = "aurora-postgresql"
+  engine_version = "14.5"
+  instance_class = "db.r6g.large"
+  instances = {
+    one = {}
+    2 = {
+      instance_class = "db.r6g.2xlarge"
     }
+  }
+
+  vpc_id               = "vpc-12345678"
+  db_subnet_group_name = "db-subnet-group"
+  security_group_rules = {
+    ex1_ingress = {
+      cidr_blocks = ["10.20.0.0/20"]
     }
+    ex1_ingress = {
+      source_security_group_id = "sg-12345678"
+    }
+  }
+
+  storage_encrypted   = true
+  apply_immediately   = true
+  monitoring_interval = 10
+
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+
+  tags = {
+    Environment = "dev"
+    Terraform   = "true"
+  }
+}
     """
 
     choice = input(
         "\nChoose LLM:\n\n"
-        "1. openai\n2. gemini\n3. claude\n\nor SLM:\n\n"
-        "4. qwen\n5. gemma\nChoice: "
+        "1. openai\n2. gemini\n3. StarCoder 2\n4. claude\n\nor SLM:\n\n"
+        "5. qwen\n6. gemma\nChoice: "
     ).strip()
 
-    output, emissions, elapsed, usage, comparison, _project_name = generate_result(choice, script_description, script_template, name_script)
+    output, emissions, elapsed, usage, comparison, _project_name = generate_result(choice, script_template, name_script)
 
     print_output(output, script_template, emissions, elapsed, usage, comparison, _project_name)
     upload_to_gcs(_project_name, name_script, output, script_template, comparison)
+"""""“Give me a list of all the essential Terraform input variables, provider arguments, and resource arguments I should define if I want to generate a Terraform configuration for [RESOURCE / GOAL] (e.g., a VPC on AWS). Include their names, data types, and example values.”"""
